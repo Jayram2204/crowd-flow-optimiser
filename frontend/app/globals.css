@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #04070a;
+  --color-panel: #0a0f14;
+  --color-panel-2: #0d1419;
+  --color-edge: #16232b;
+  --color-terminal: #0aff9d;
+  --color-term-dim: #3b4a50;
+  --color-term-amber: #ffb000;
+  --color-term-red: #ff2d55;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: #c7d2cf;
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: rgba(10, 255, 157, 0.25);
+}
+
+/* subtle CRT grid */
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(10, 255, 157, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 255, 157, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* horizontal scanline sweep */
+.scanlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.14) 3px
+  );
+  z-index: 50;
+}
+
+.led {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
