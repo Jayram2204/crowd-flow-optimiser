@@ -155,8 +155,9 @@ external dependencies.
 - **Decoupled ingest vs decision:** telemetry writes are synchronous and
   cheap (facts); decisions are asynchronous and isolated (agents). A hot zone
   never blocks a cold one.
-- **Dependency-light:** the entire backend is stdlib-only. Buildable anywhere,
-  auditable in an afternoon.
+- **Dependency-light:** the entire backend is stdlib-only except one
+  dependency — `gorilla/websocket` for the terminal's live stream. Buildable
+  anywhere, auditable in an afternoon.
 
 ### Python / FastAPI — the vision seam
 
@@ -206,6 +207,10 @@ AI_EMIT_TO_BACKEND=http://localhost:8080/api/v1/telemetry \
 # 2. Go agent network (Go 1.22+)
 cd backend
 go run ./cmd/server
+
+# 2b. Minimal two-gate negotiation demo (raw channels, no HTTP)
+cd backend
+go run .
 
 # 3. Terminal UI (Node 20+)
 cd frontend

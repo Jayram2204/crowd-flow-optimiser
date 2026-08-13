@@ -85,6 +85,17 @@ event: metric
 data: {"zone_id":"GATE_A","capacity":120,...}
 ```
 
+### `GET /api/v1/ws`
+
+WebSocket live stream (preferred by the terminal UI). Full snapshot on
+connect, then one JSON `ZoneMetric` per update. Server pings every 20s;
+client pings are drained to detect disconnects. Reconnect is client-driven.
+
+```
+→ {"zone_id":"GATE_A","capacity":120,"density":0.94,"occupancy":122,
+   "congestion":"CRITICAL","inflow_rate":41.6,"outflow_rate":3.1,"timestamp":"..."}
+```
+
 ### `GET /api/v1/interventions`
 
 Full intervention audit trail, newest first.
@@ -159,6 +170,31 @@ Per-frame density estimation seam (the HF model boundary).
   "frame_ref": "cctv:1234"
 }
 ```
+
+### `POST /api/v1/analyze-density`
+
+Per-frame density analysis for one gate (multipart upload). Simulates ~150ms
+vision inference; in production the frame goes to a HF CSRNet pipeline.
+
+```
+multipart/form-data: gate_id=GATE_A, file=<frame>
+```
+
+```json
+{
+  "gate_id": "GATE_A",
+  "status": "success",
+  "model_used": "HF/csrnet-pytorch",
+  "estimated_density": 84,
+  "timestamp": "2026-08-13T03:15:00Z"
+}
+```
+
+### Standalone two-gate demo
+
+`backend/main.go` (`go run .` in `backend/`) runs the raw Phase 1 primitive:
+two gate agents that negotiate a reroute through channels at the 85%
+capacity threshold, independent of the full network.
 
 ---
 

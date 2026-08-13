@@ -20,6 +20,7 @@ func NewRouter(h *Handlers) http.Handler {
 	mux.HandleFunc("GET /api/v1/interventions", h.handleListInterventions)
 	mux.HandleFunc("POST /api/v1/interventions", h.handleApplyIntervention)
 	mux.HandleFunc("GET /api/v1/stream", h.handleStream)
+	mux.HandleFunc("GET /api/v1/ws", h.handleStreamWS)
 
 	return cors(logger(mux))
 }

@@ -115,6 +115,8 @@ func (h *Handlers) handleStream(w http.ResponseWriter, r *http.Request) {
 
 	sub, unsub := h.state.Subscribe()
 	defer unsub()
+	ivSub, unsubIv := h.signage.Subscribe()
+	defer unsubIv()
 
 	// Push a full snapshot immediately so the terminal boots with state.
 	for _, m := range h.state.All() {
@@ -130,6 +132,8 @@ func (h *Handlers) handleStream(w http.ResponseWriter, r *http.Request) {
 			return
 		case m := <-sub:
 			h.writeSSE(w, flusher, "metric", m)
+		case iv := <-ivSub:
+			h.writeSSE(w, flusher, "intervention", iv)
 		case <-ticker.C:
 			_, _ = fmt.Fprintf(w, ": heartbeat\n\n")
 			flusher.Flush()
@@ -137,8 +141,8 @@ func (h *Handlers) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) writeSSE(w http.ResponseWriter, flusher http.Flusher, event string, m models.ZoneMetric) {
-	payload, err := json.Marshal(m)
+func (h *Handlers) writeSSE(w http.ResponseWriter, flusher http.Flusher, event string, data any) {
+	payload, err := json.Marshal(data)
 	if err != nil {
 		log.Printf("[sse] marshal error: %v", err)
 		return

@@ -55,7 +55,7 @@ flowchart LR
 | Goroutine per zone | N independent decision-makers with near-zero scheduling cost. |
 | Channels for negotiation | Message-passing semantics: no locks in the hot path. |
 | State Manager vs agents split | Facts are cheap and synchronous; decisions are expensive and asynchronous. |
-| SSE not WebSockets | Stdlib-only, reconnect-friendly, one-way fan-out is all the UI needs. |
+| WebSocket for live UI, SSE fallback | Two-way liveness + reconnect for the terminal; SSE kept as a stdlib-only fallback. |
 | Simulated signage API | The prototype executes "physical" actions without hardware; the seam is one interface. |
 | Simulated vision mode | The full pipeline runs with zero CCTV, zero HF tokens, zero GPU. |
 

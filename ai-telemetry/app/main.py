@@ -1,8 +1,10 @@
 import asyncio
 import logging
+import random
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
@@ -68,3 +70,23 @@ async def density_estimate(req: DensityEstimateRequest) -> DensityEstimateRespon
         mode=estimator.mode,
         frame_ref=req.frame_ref,
     )
+
+
+@app.post("/api/v1/analyze-density")
+async def analyze_density(gate_id: str, file: UploadFile = File(...)) -> dict:
+    """Exact Phase 2 contract: per-frame density analysis for one gate.
+
+    Production: sends the uploaded frame to a Hugging Face CSRNet crowd-
+    counting model via the huggingface_hub inference client. Prototype:
+    simulates ~150ms vision inference through the same seam.
+    """
+    await asyncio.sleep(0.15)
+    frame_ref = file.filename or f"cctv:{gate_id}"
+    _, estimated_crowd_size = estimator.estimate(frame_ref, gate_id, random.randint(10, 120))
+    return {
+        "gate_id": gate_id,
+        "status": "success",
+        "model_used": f"HF/{estimator.hf_model_id}",
+        "estimated_density": estimated_crowd_size,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
