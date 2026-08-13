@@ -26,3 +26,8 @@ export interface Intervention {
   target_zone?: string;
   applied_at: string;
 }
+
+/** Envelope for live-stream frames (WS sends `{event, data}`; SSE names the event). */
+export type WSFrame =
+  | { event: "metric"; data: ZoneMetric }
+  | { event: "intervention"; data: Intervention };
