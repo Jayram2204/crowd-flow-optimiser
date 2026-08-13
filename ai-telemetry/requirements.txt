@@ -4,7 +4,7 @@ uvicorn[standard]==0.30.1
 httpx==0.27.0
 
 # --- Multipart uploads (POST /api/v1/analyze-density) ---
-python-multipart==0.0.9
+python-multipart==0.0.31
 
 # --- Validation ---
 pydantic==2.7.4
