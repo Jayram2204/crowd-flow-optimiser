@@ -7,6 +7,7 @@ backend/dist/
 coverage.txt
 
 # --- Node / Next.js ---
+node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
