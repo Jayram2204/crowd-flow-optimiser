@@ -1,51 +1,17 @@
-# Production Deployment Guide
-
-This document outlines the live deployment strategy for Crowd Flow Optimiser. Our architecture consists of three decoupled layers: a Next.js frontend, a Go agent network, and a Python AI telemetry node. 
+# The Live Deployment Playbook
 
 ## 1. Frontend: Vercel
-The frontend is a Next.js application designed to act as a high-speed financial terminal. 
+Vercel is the only choice here. It natively understands Next.js, automatically provisions HTTPS (which you absolutely need for the browser to allow `navigator.mediaDevices.getUserMedia` for your webcam), and supports WebSockets on the client side.
+- **Action**: Connect your GitHub repo to Vercel. Leave the build command as `npm run build`. It will deploy instantly.
+- **Env Vars**: Set `NEXT_PUBLIC_WS_BACKEND_URL` to your Go backend's production WSS URL.
 
-**Platform**: [Vercel](https://vercel.com)
-- **Why**: Native support for Next.js App Router, edge caching, HTTPS termination, and flawless handling of long-lived WebSocket connections required by the UI.
-- **Steps**:
-  1. Import the repository in Vercel.
-  2. Set the **Root Directory** to `frontend`.
-  3. Set the Environment Variable `NEXT_PUBLIC_API_URL` to point to the deployed Backend URL (e.g., `wss://backend-production.up.railway.app`).
-  4. Deploy.
+## 2. Backend (Go Logic Engine): Railway.app
+Serverless platforms (like AWS Lambda or Vercel functions) kill WebSocket connections after a few seconds. Railway provisions continuous containers that keep your Go P2P agent mesh and WebSocket streams alive indefinitely.
+- **Action**: Connect your GitHub repo to Railway, select the `/backend` folder. Railway will automatically detect the Dockerfile or Go modules and build it.
+- **Networking**: Railway automatically provisions the SSL certificate, so your local `ws://` endpoint becomes a secure `wss://` endpoint.
 
-## 2. Backend: Railway.app
-The Go backend acts as the decentralized decision engine and State Manager.
-
-**Platform**: [Railway.app](https://railway.app)
-- **Why**: Natively builds the Go Dockerfile. Railway provides excellent support for persistent, long-lived WebSocket (WSS) and Server-Sent Events (SSE) connections without aggressive timeout culling, which is critical for our Go Agent mesh.
-- **Steps**:
-  1. Create a New Project -> Deploy from GitHub repo.
-  2. Set the **Root Directory** to `backend` (Railway will automatically detect the Dockerfile).
-  3. Configure Environment Variables:
-     - `PORT=8080`
-     - `BACKEND_ZONE_TOPOLOGY="GATE_A,GATE_B,CONCOURSE_A"` (Adjust as needed)
-  4. Deploy and copy the generated public URL.
-
-## 3. AI Telemetry: Railway.app OR RunPod
-The Python telemetry layer translates CCTV frames into density matrices using YOLO11n.
-
-### Option A: Railway.app (CPU Inference)
-For basic deployments or using the simulated MP4 loop.
-- **Why**: Simple deployment alongside the Go backend.
-- **Steps**:
-  1. Deploy a new service from the repo, setting **Root Directory** to `ai-telemetry`.
-  2. Configure Environment Variables:
-     - `PORT=8000`
-     - `AI_EMIT_TO_BACKEND="https://<YOUR-BACKEND-URL>.up.railway.app/api/v1/telemetry"`
-     - `AI_MODE="simulated"` (or `live` for CPU inference)
-
-### Option B: RunPod (GPU Inference for 30+ FPS)
-For high-density, real-world live deployments requiring heavy GPU acceleration for YOLO11n.
-- **Why**: Dedicated GPUs (e.g., RTX 3090 / A4000) for uncompromised vision throughput.
-- **Steps**:
-  1. Build and push the `ai-telemetry/Dockerfile` to Docker Hub or a private registry.
-  2. Spin up a RunPod serverless or pod instance using the image.
-  3. Expose port 8000.
-  4. Map Environment Variables:
-     - `AI_EMIT_TO_BACKEND="https://<YOUR-BACKEND-URL>.up.railway.app/api/v1/telemetry"`
-     - `AI_MODE="live"`
+## 3. AI Telemetry (Python / YOLO11n)
+You have two choices here depending on how much hardware you want to throw at the live demo:
+- **The Easy Route (Railway.app)**: Deploy the `/ai-telemetry` folder as a second service on Railway. It will run on CPU. It might only get 5–10 FPS, but it requires zero extra configuration and keeps everything in one dashboard.
+- **The High-Performance Route (RunPod)**: If you want to flex a flawless 30+ FPS stream for the judges, deploy the Python Docker container to a serverless GPU platform like RunPod. You get an Nvidia RTX GPU for cents per hour.
+- **Env Vars**: Point the Python service's `BACKEND_INGEST_URL` to the Railway Go URL.
