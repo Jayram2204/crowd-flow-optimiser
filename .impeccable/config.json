@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreValues": [
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": ["http://localhost:*/"],
+        "createdAt": "2026-08-13",
+        "reason": "CROWD_FLOW world grammar: the control-room surface's established mono micro-label tier (10-11px caps labels, captions, ledger rows). The pre-existing /operate surface carries the identical scale; the detector's own tiny-text rule exempts code/terminal contexts. Landing must unify with the world, so the scale is honored here rather than flagged."
+      },
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": ["http://localhost:*/"],
+        "createdAt": "2026-08-13",
+        "reason": "CROWD_FLOW world grammar: 0.10em letter-spacing is the established terminal label treatment (short uppercase micro-labels only). Same usage as the pre-existing /operate surface. The rule itself reserves wide tracking for short uppercase labels; these are exactly that."
+      }
+    ]
+  }
+}

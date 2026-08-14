@@ -1,0 +1,271 @@
+@import "tailwindcss";
+
+/*
+  Spacing scale: 4-unit base. This surface uses only these steps:
+    space-1 = 4px   space-2 = 8px   space-3 = 12px  space-4 = 16px
+    space-6 = 24px  space-8 = 32px  space-12 = 48px
+  Semantic roles:
+    panel padding      = space-3 / space-4
+    list row gap       = space-1 / space-2
+    section separation = space-6
+    page gutter        = space-8
+  Mapped to Tailwind's p-* and gap-* utilities (p-1..p-12), which share
+  the 4px base. No one-off values outside this scale.
+*/
+@theme {
+  --color-void: #04070a;
+  --color-panel: #0a0f14;
+  --color-panel-2: #0d1419;
+  --color-edge: #16232b;
+  --color-terminal: #0aff9d;
+  --color-term-dim: #7b8c95;
+  --color-term-amber: #ffb000;
+  --color-term-red: #ff2d55;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: #c7d2cf;
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: rgba(10, 255, 157, 0.25);
+}
+
+/* horizontal scanline sweep */
+.scanlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.14) 3px
+  );
+  z-index: 50;
+}
+
+.led {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+/* Keyboard operators need a visible focus ring on this dark surface. */
+:focus-visible {
+  outline: 1px solid var(--color-terminal);
+  outline-offset: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+  Focal motion — exactly one authored moment on this surface:
+  a signage reroute executing. The newest intervention-log line lands
+  (log-land) and the lead zone's numeral answers (numeral-beat). Both are
+  one-shot 300-500ms beats with natural deceleration, never looping, never
+  on idle/nominal zones. Honored only when the operator hasn't asked for
+  reduced motion.
+*/
+@keyframes log-land {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.log-land {
+  animation: log-land 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes numeral-beat {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.numeral-beat {
+  animation: numeral-beat 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log-land,
+  .numeral-beat {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Landing surface (Persuade) — the same world, opened to display      */
+/* scale. Two authored motion moments only: the headline resolution    */
+/* and the negotiation ping. Both honor prefers-reduced-motion.        */
+/* ------------------------------------------------------------------ */
+
+/* Display headline: mono at genuinely large size, optically tuned.    */
+.landing-display {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  font-size: clamp(3rem, 11.5vw, 7.5rem);
+}
+
+.landing-lead-in {
+  opacity: 0;
+  transform: translateY(0.55em);
+}
+
+.landing-ready .landing-lead-in {
+  animation: landing-lead-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-ready .landing-lead-in:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.landing-ready .landing-lead-in:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+@keyframes landing-lead-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.55em);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Thesis + sub-rule: hairline that draws in after the headline. */
+.landing-thesis-in {
+  opacity: 0;
+}
+
+.landing-ready .landing-thesis-in {
+  animation: landing-thesis-in 700ms cubic-bezier(0.16, 1, 0.3, 1) 380ms both;
+}
+
+@keyframes landing-thesis-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Negotiation ping: one pulse travels GATE_A -> GATE_B on scroll-in. */
+.negotiation-ping {
+  opacity: 0;
+}
+
+.negotiation-ping.on {
+  animation: negotiation-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.negotiation-ping .ping-dot {
+  opacity: 0;
+}
+
+.negotiation-ping.on .ping-dot {
+  animation: ping-travel 1.4s cubic-bezier(0.65, 0, 0.35, 1) 350ms both;
+}
+
+.negotiation-ping .ping-accept {
+  opacity: 0;
+}
+
+.negotiation-ping.on .ping-accept {
+  animation: ping-accept 700ms ease-out 1.25s both;
+}
+
+@keyframes negotiation-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ping-travel {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(168px);
+  }
+}
+
+@keyframes ping-accept {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Blinking status cursor removed: the brief pins exactly two authored
+   motion moments (headline resolution + negotiation ping). The honesty
+   line's underscore stays as static terminal-green text. */
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-lead-in,
+  .landing-thesis-in,
+  .negotiation-ping,
+  .negotiation-ping .ping-dot,
+  .negotiation-ping .ping-accept {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
