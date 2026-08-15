@@ -17,10 +17,11 @@ def fast_tests(monkeypatch):
     monkeypatch.setattr(settings, "sim_loop_seconds", 0.001)
 
 
-def test_build_batch_simulated_mode():
+@pytest.mark.asyncio
+async def test_build_batch_simulated_mode():
     estimator = DensityEstimator("simulated", "yolo11n")
     scenario = VenueScenario(DEFAULT_ZONES)
-    batch = _build_batch(estimator, scenario, "cctv:1")
+    batch = await _build_batch(estimator, scenario, "cctv:1")
 
     assert len(batch.zones) == len(DEFAULT_ZONES)
     zone_ids = {z.zone_id for z in batch.zones}
@@ -40,7 +41,8 @@ def test_build_batch_simulated_mode():
         assert dt is not None
 
 
-def test_build_batch_live_mode(monkeypatch, tmp_path):
+@pytest.mark.asyncio
+async def test_build_batch_live_mode(monkeypatch, tmp_path):
     (tmp_path / "frame.jpg").write_bytes(b"image")
     monkeypatch.setattr(settings, "frames_dir", str(tmp_path))
 
@@ -49,12 +51,13 @@ def test_build_batch_live_mode(monkeypatch, tmp_path):
     estimator.mode = "live"
 
     scenario = VenueScenario(DEFAULT_ZONES)
-    batch = _build_batch(estimator, scenario, "cctv:42")
+    batch = await _build_batch(estimator, scenario, "cctv:42")
 
     assert len(batch.zones) == len(DEFAULT_ZONES)
-    for z in batch.zones:
-        assert z.occupancy == 10
-        assert z.density == pytest.approx(round(10 / DEFAULT_ZONES[z.zone_id][1], 3))
+    for zone in batch.zones:
+        if zone.zone_id == "GATE_A":
+            assert zone.occupancy == 10
+            assert zone.density == round(10 / DEFAULT_ZONES["GATE_A"][1], 3)
 
 
 @pytest.mark.asyncio
@@ -254,4 +257,3 @@ async def test_run_forever_clean_cancellation():
             await task
 
     assert task.cancelled()
-

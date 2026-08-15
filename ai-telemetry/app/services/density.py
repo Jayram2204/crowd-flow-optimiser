@@ -9,11 +9,13 @@ Hugging Face object-detection pipeline (e.g. facebook/detr-resnet-50).
 Both modes expose the identical contract, so the rest of the stack never
 knows the difference.
 """
+import base64
 import hashlib
 import logging
 import math
 import os
 import random
+import tempfile
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -132,6 +134,13 @@ class DensityEstimator:
 
     def estimate(self, frame_ref: str, zone_id: str, occupancy_hint: int) -> Tuple[float, int]:
         """Return (density_pp_per_m2, estimated_occupancy)."""
+        if frame_ref.startswith("data:image/"):
+            if self._pipeline is None:
+                log.info("Live webcam frame received! Bootstrapping vision pipeline on the fly...")
+                self._try_load_pipeline()
+            if self._pipeline is not None:
+                return self._live_estimate_base64(frame_ref, zone_id)
+            return self._simulated_estimate(frame_ref, zone_id, occupancy_hint)
         if self.mode == "live" and self._pipeline is not None and self._frames:
             return self._live_estimate(frame_ref, zone_id)
         return self._simulated_estimate(frame_ref, zone_id, occupancy_hint)
@@ -178,6 +187,33 @@ class DensityEstimator:
         density = round(occupancy / area, 3)
         log.info("live inference %s zone=%s frame=%s persons=%d density=%.3f", frame_ref, zone_id, frame.name, persons, density)
         return density, occupancy
+
+    def _live_estimate_base64(self, frame_ref: str, zone_id: str) -> Tuple[float, int]:
+        try:
+            header, encoded = frame_ref.split(",", 1)
+            data = base64.b64decode(encoded)
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+                tf.write(data)
+                tf_path = Path(tf.name)
+            
+            try:
+                # Bypass the 8-second cache so every webcam frame is actually processed
+                detections = self._pipeline(str(tf_path))
+                persons = sum(
+                    1 for d in detections
+                    if d.get("label") == "person" and d.get("score", 0) >= self.PERSON_MIN_SCORE
+                )
+                
+                capacity, area = settings.zones[zone_id]
+                occupancy = min(persons, capacity)
+                density = round(occupancy / area, 3)
+                log.info("live webcam zone=%s persons=%d density=%.3f", zone_id, persons, density)
+                return density, occupancy
+            finally:
+                tf_path.unlink(missing_ok=True)
+        except Exception as e:
+            log.error("Failed to parse base64 frame: %s", e)
+            return self._simulated_estimate(frame_ref, zone_id, 0)
 
     @staticmethod
     def classify(density: float) -> str:

@@ -65,7 +65,7 @@ async def density_estimate(req: DensityEstimateRequest) -> DensityEstimateRespon
         raise HTTPException(status_code=400, detail="Unknown zone_id")
     occupancy_hint = 0
     try:
-        density, occ = estimator.estimate(req.frame_ref, req.zone_id, occupancy_hint)
+        density, occ = await asyncio.to_thread(estimator.estimate, req.frame_ref, req.zone_id, occupancy_hint)
     except Exception as e:
         log.error("Inference failed for %s: %s", req.zone_id, e)
         raise HTTPException(status_code=500, detail="Inference processing error")
@@ -96,7 +96,7 @@ async def analyze_density(gate_id: str, file: UploadFile = File(...)) -> dict:
     await asyncio.sleep(0.15)
     frame_ref = file.filename or f"cctv:{gate_id}"
     try:
-        _, estimated_crowd_size = estimator.estimate(frame_ref, gate_id, random.randint(10, 120))
+        _, estimated_crowd_size = await asyncio.to_thread(estimator.estimate, frame_ref, gate_id, random.randint(10, 120))
     except Exception as e:
         log.error("Inference failed for %s: %s", gate_id, e)
         raise HTTPException(status_code=500, detail="Inference processing error")
@@ -124,7 +124,7 @@ async def live_inference_ws(websocket: WebSocket):
                     
                     try:
                         # 1. Run YOLO inference (uses the existing seam)
-                        density, occ = estimator.estimate(frame_ref, zone_id, 0)
+                        density, occ = await asyncio.to_thread(estimator.estimate, frame_ref, zone_id, 0)
                         
                         # 2. Package into TelemetryBatch
                         # Ensure we get the capacity right, fallback to 100

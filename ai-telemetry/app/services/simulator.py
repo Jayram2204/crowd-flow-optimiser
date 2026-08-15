@@ -29,7 +29,7 @@ async def run_forever(estimator: DensityEstimator) -> None:
 
             _frames += 1
             frame_ref = f"cctv:{_frames}"
-            batch = _build_batch(estimator, scenario, frame_ref)
+            batch = await _build_batch(estimator, scenario, frame_ref)
             log.info("emit frame=%s zones=%d", frame_ref, len(batch.zones))
             try:
                 resp = await client.post(settings.emit_to_backend, json=batch.model_dump())
@@ -40,10 +40,10 @@ async def run_forever(estimator: DensityEstimator) -> None:
             await asyncio.sleep(settings.sim_loop_seconds)
 
 
-def _build_batch(estimator: DensityEstimator, scenario: VenueScenario, frame_ref: str) -> TelemetryBatch:
+async def _build_batch(estimator: DensityEstimator, scenario: VenueScenario, frame_ref: str) -> TelemetryBatch:
     zones: List[ZoneMetric] = []
     for zid, occ, inflow, outflow in scenario.tick():
-        density, occ_est = estimator.estimate(frame_ref, zid, occ)
+        density, occ_est = await asyncio.to_thread(estimator.estimate, frame_ref, zid, occ)
         congestion = estimator.classify(density)
         zones.append(
             ZoneMetric(

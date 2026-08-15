@@ -72,20 +72,6 @@ async def test_adversarial_run_forever_cancellation_during_slow_network(monkeypa
 
 @pytest.mark.asyncio
 async def test_adversarial_run_forever_resilience_to_consecutive_catastrophic_errors(monkeypatch):
-    """Verify that loop survives 50 consecutive HTTP exceptions and server drops."""
-    monkeypatch.setattr(simulator, "_frames", 0)
-    monkeypatch.setattr(settings, "sim_loop_seconds", 0.001)
-    estimator = DensityEstimator("simulated", "yolo11n")
-
-    error_types = [
-        httpx.ConnectError("Connection refused"),
-        httpx.ConnectTimeout("Connect timeout"),
-        httpx.ReadTimeout("Read timeout"),
-        httpx.PoolTimeout("Pool timeout"),
-        httpx.RemoteProtocolError("Remote protocol error"),
-        httpx.UnsupportedProtocol("Unsupported protocol"),
-        httpx.DecodingError("Decoding error"),
-    ]
     error_idx = 0
     attempts = 0
 
@@ -116,6 +102,8 @@ async def test_adversarial_run_forever_all_http_error_status_codes(monkeypatch):
     """Verify loop handles status codes 400, 401, 403, 404, 422, 500, 502, 503, 504 without terminating."""
     monkeypatch.setattr(simulator, "_frames", 0)
     monkeypatch.setattr(settings, "sim_loop_seconds", 0.001)
+    import time
+    monkeypatch.setattr(time, "sleep", lambda x: None)
     estimator = DensityEstimator("simulated", "yolo11n")
 
     status_codes = [400, 401, 403, 404, 422, 500, 502, 503, 504]

@@ -32,13 +32,18 @@ export default function DemoControls({
     let interval: ReturnType<typeof setInterval> | null = null;
 
     if (source === "WEBCAM") {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = process.env.NEXT_PUBLIC_TELEMETRY_WS_URL || "ws://localhost:8000";
+      let host = process.env.NEXT_PUBLIC_TELEMETRY_WS_URL || "ws://127.0.0.1:8000";
+      // Auto-correct http(s) to ws(s) if the user misconfigured the .env
+      host = host.replace("http://", "ws://").replace("https://", "wss://");
       const wsUrl = `${host}/api/v1/ws/live-inference`;
       
-      wsRef.current = new WebSocket(wsUrl);
-      wsRef.current.onopen = () => console.log("Live telemetry WS connected");
-      wsRef.current.onerror = (e) => console.error("Live telemetry WS error", e);
+      try {
+        wsRef.current = new WebSocket(wsUrl);
+        wsRef.current.onopen = () => console.log("Live telemetry WS connected");
+        wsRef.current.onerror = (e) => console.error("Live telemetry WS error on", wsUrl, e);
+      } catch (err) {
+        console.error("Failed to construct WebSocket:", err);
+      }
 
       navigator.mediaDevices
         .getUserMedia({ video: { width: 640, height: 480, frameRate: 10 } })
@@ -80,8 +85,14 @@ export default function DemoControls({
 
   return (
     <div className="border border-slate-800 bg-[#04070a] text-[10px] tracking-widest text-term-dim p-4 flex flex-col gap-6 relative">
-      {/* Hidden elements for webcam capture */}
-      <video ref={videoRef} className="hidden" muted playsInline />
+      {/* Webcam preview feed */}
+      <video 
+        ref={videoRef} 
+        className={source === "WEBCAM" ? "w-full border border-slate-800 aspect-video object-cover opacity-80 mix-blend-screen" : "hidden"} 
+        muted 
+        playsInline 
+      />
+      {/* Hidden canvas for extracting frames */}
       <canvas ref={canvasRef} width={640} height={480} className="hidden" />
 
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
