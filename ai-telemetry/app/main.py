@@ -23,7 +23,7 @@ estimator: DensityEstimator
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global estimator
-    estimator = DensityEstimator(settings.mode, settings.hf_model_id, settings.hf_token)
+    estimator = DensityEstimator(settings.mode, settings.hf_model_id, settings.hf_token, settings.hf_fallback_model_id)
     log.info("vision seam ready :: mode=%s model=%s", estimator.mode, estimator.hf_model_id)
     log.info("telemetry emitter targeting %s every %.1fs", settings.emit_to_backend, settings.sim_loop_seconds)
     task = None
@@ -118,8 +118,13 @@ async def live_inference_ws(websocket: WebSocket):
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             while True:
-                data = await websocket.receive_json()
-                if data.get("event") == "frame":
+                try:
+                    data = await websocket.receive_json()
+                    event = data.get("event")
+                except (ValueError, AttributeError) as e:
+                    log.warning("Ignoring malformed live-inference message: %s", e)
+                    continue
+                if event == "frame":
                     frame_ref = data.get("data", "live_frame")
                     
                     try:

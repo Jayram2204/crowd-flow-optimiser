@@ -72,6 +72,16 @@ async def test_adversarial_run_forever_cancellation_during_slow_network(monkeypa
 
 @pytest.mark.asyncio
 async def test_adversarial_run_forever_resilience_to_consecutive_catastrophic_errors(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda _: None)
+    monkeypatch.setattr(settings, "sim_loop_seconds", 0.001)
+    monkeypatch.setattr(simulator, "_frames", 0)
+    estimator = DensityEstimator("simulated", "yolo11n")
+    error_types = [
+        httpx.ConnectError("boom"),
+        httpx.ReadTimeout("boom"),
+        httpx.RemoteProtocolError("boom"),
+        RuntimeError("boom"),
+    ]
     error_idx = 0
     attempts = 0
 

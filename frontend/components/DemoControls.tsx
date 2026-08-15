@@ -45,31 +45,35 @@ export default function DemoControls({
         console.error("Failed to construct WebSocket:", err);
       }
 
-      navigator.mediaDevices
-        .getUserMedia({ video: { width: 640, height: 480, frameRate: 10 } })
-        .then((s) => {
-          stream = s;
-          if (videoRef.current) {
-            videoRef.current.srcObject = s;
-            videoRef.current.play();
-          }
-
-          interval = setInterval(() => {
-            if (
-              wsRef.current?.readyState === WebSocket.OPEN &&
-              videoRef.current &&
-              canvasRef.current
-            ) {
-              const ctx = canvasRef.current.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(videoRef.current, 0, 0, 640, 480);
-                const frame = canvasRef.current.toDataURL("image/jpeg", 0.7);
-                wsRef.current.send(JSON.stringify({ event: "frame", data: frame }));
-              }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        console.error("getUserMedia unsupported in this environment");
+      } else {
+        navigator.mediaDevices
+          .getUserMedia({ video: { width: 640, height: 480, frameRate: 10 } })
+          .then((s) => {
+            stream = s;
+            if (videoRef.current) {
+              videoRef.current.srcObject = s;
+              videoRef.current.play();
             }
-          }, 100); // 10 FPS
-        })
-        .catch((err) => console.error("Webcam access denied", err));
+
+            interval = setInterval(() => {
+              if (
+                wsRef.current?.readyState === WebSocket.OPEN &&
+                videoRef.current &&
+                canvasRef.current
+              ) {
+                const ctx = canvasRef.current.getContext("2d");
+                if (ctx) {
+                  ctx.drawImage(videoRef.current, 0, 0, 640, 480);
+                  const frame = canvasRef.current.toDataURL("image/jpeg", 0.7);
+                  wsRef.current.send(JSON.stringify({ event: "frame", data: frame }));
+                }
+              }
+            }, 100); // 10 FPS
+          })
+          .catch((err) => console.error("Webcam access denied", err));
+      }
     }
 
     return () => {
@@ -88,7 +92,7 @@ export default function DemoControls({
       {/* Webcam preview feed */}
       <video 
         ref={videoRef} 
-        className={source === "WEBCAM" ? "w-full border border-slate-800 aspect-video object-cover opacity-80 mix-blend-screen" : "hidden"} 
+        className={source === "WEBCAM" ? "w-full border border-slate-800 aspect-video object-cover" : "hidden"}
         muted 
         playsInline 
       />

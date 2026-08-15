@@ -27,16 +27,21 @@ async def run_forever(estimator: DensityEstimator) -> None:
                 await asyncio.sleep(1.0)
                 continue
 
-            _frames += 1
-            frame_ref = f"cctv:{_frames}"
-            batch = await _build_batch(estimator, scenario, frame_ref)
-            log.info("emit frame=%s zones=%d", frame_ref, len(batch.zones))
             try:
-                resp = await client.post(settings.emit_to_backend, json=batch.model_dump())
-                if resp.status_code not in (200, 202):
-                    log.warning("backend rejected batch: HTTP %s %s", resp.status_code, resp.text[:200])
-            except httpx.HTTPError as exc:
-                log.warning("backend unreachable (%s); retrying next tick", exc)
+                _frames += 1
+                frame_ref = f"cctv:{_frames}"
+                batch = await _build_batch(estimator, scenario, frame_ref)
+                log.info("emit frame=%s zones=%d", frame_ref, len(batch.zones))
+                try:
+                    resp = await client.post(settings.emit_to_backend, json=batch.model_dump())
+                    if resp.status_code not in (200, 202):
+                        log.warning("backend rejected batch: HTTP %s %s", resp.status_code, resp.text[:200])
+                except httpx.HTTPError as exc:
+                    log.warning("backend unreachable (%s); retrying next tick", exc)
+            except Exception as exc:  # noqa: BLE001
+                # A single bad frame/inference must not permanently kill the
+                # emission loop -- log it and keep ticking.
+                log.error("telemetry tick failed (%s); continuing", exc)
             await asyncio.sleep(settings.sim_loop_seconds)
 
 

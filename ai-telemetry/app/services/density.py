@@ -36,10 +36,20 @@ class DensityEstimator:
     PERSON_MIN_SCORE = 0.5
     FRAME_CACHE_TTL = 8.0
 
-    def __init__(self, mode: str, model_id: str, token: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        mode: str,
+        model_id: str,
+        token: Optional[str] = None,
+        fallback_model_id: Optional[str] = None,
+    ) -> None:
         self.mode = mode
         self.hf_model_id = model_id
         self.token = token
+        # Distinct from hf_model_id: the transformers fallback needs a real
+        # DETR-style HF checkpoint, not whatever the YOLO model id happens to
+        # be (e.g. "yolo11n" is not a valid transformers repo id).
+        self.fallback_model_id = fallback_model_id or "facebook/detr-resnet-50"
         self._pipeline = None
         self._model_backend = "none"
         self._frames: List[Path] = []
@@ -122,12 +132,12 @@ class DensityEstimator:
             device = "mps" if torch.backends.mps.is_available() else "cpu"
             self._pipeline = pipeline(
                 "object-detection",
-                model=self.hf_model_id,
+                model=self.fallback_model_id,
                 token=self.token or None,
                 device=device,
             )
             self._model_backend = "transformers"
-            log.info("live vision pipeline loaded: %s (backend=%s device=%s)", self.hf_model_id, self._model_backend, device)
+            log.info("live vision pipeline loaded: %s (backend=%s device=%s)", self.fallback_model_id, self._model_backend, device)
         except Exception as exc:  # noqa: BLE001
             log.warning("failed to load live pipeline (%s); degrading to simulated", exc)
             self.mode = "simulated"

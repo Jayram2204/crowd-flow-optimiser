@@ -32,6 +32,9 @@ class Settings:
         default_factory=lambda: os.getenv("AI_EMIT_TO_BACKEND", "http://localhost:8080/api/v1/telemetry")
     )
     hf_model_id: str = field(default_factory=lambda: os.getenv("AI_HF_MODEL_ID", "yolo11n"))
+    hf_fallback_model_id: str = field(
+        default_factory=lambda: os.getenv("AI_HF_FALLBACK_MODEL_ID", "facebook/detr-resnet-50")
+    )
     mode: str = field(default_factory=lambda: os.getenv("AI_MODE", "simulated").lower())
     hf_token: str = field(default_factory=lambda: os.getenv("HF_TOKEN", ""))
     frames_dir: str = field(

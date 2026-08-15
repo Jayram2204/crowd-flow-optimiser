@@ -29,6 +29,7 @@ func (h *Handlers) handleStreamWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+	conn.SetReadLimit(4096)
 
 	sub, unsub := h.state.Subscribe()
 	defer unsub()
