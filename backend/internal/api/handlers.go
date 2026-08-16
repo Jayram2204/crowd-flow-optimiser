@@ -165,7 +165,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"name": "Crowd Flow Optimiser",
+		"name":    "Crowd Flow Optimiser",
 		"tagline": "monitoring a dashboard doesn't save lives; executing interventions does",
 		"endpoints": []string{
 			"POST /api/v1/telemetry",

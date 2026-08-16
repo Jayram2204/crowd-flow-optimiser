@@ -1,6 +1,7 @@
 package intervention
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -8,6 +9,19 @@ import (
 
 	"crowd-flow-optimiser/backend/internal/models"
 )
+
+// Generator defines the contract for asynchronously rewriting a deterministic
+// intervention message using an external LLM.
+type Generator interface {
+	Polish(ctx context.Context, iv models.Intervention, m models.ZoneMetric) (string, error)
+}
+
+// NoopGenerator is the default fallback when no LLM is configured.
+type NoopGenerator struct{}
+
+func (NoopGenerator) Polish(ctx context.Context, iv models.Intervention, m models.ZoneMetric) (string, error) {
+	return "", fmt.Errorf("generator disabled")
+}
 
 // Client is the physical-action boundary: whatever the venue exposes to
 // change crowd flow (signage controllers, gate hold systems, staff radio).
@@ -31,18 +45,25 @@ func (LogOnlyClient) SetMessage(signID, message, severity string) error {
 // every applied intervention out to live-stream subscribers so the UI can
 // show autonomous actions the moment they execute.
 type Service struct {
-	mu     sync.Mutex
-	log    []models.Intervention
-	client Client
-	subs   map[chan models.Intervention]struct{}
+	mu       sync.Mutex
+	log      []models.Intervention
+	client   Client
+	gen      Generator
+	getState func(zoneID string) (models.ZoneMetric, bool)
+	subs     map[chan models.Intervention]struct{}
 }
 
 // NewService returns an intervention service backed by a log-only signage
 // client. Swap in a real client here for production.
-func NewService() *Service {
+func NewService(getState func(zoneID string) (models.ZoneMetric, bool), gen Generator) *Service {
+	if gen == nil {
+		gen = NoopGenerator{}
+	}
 	return &Service{
-		client: LogOnlyClient{},
-		subs:   make(map[chan models.Intervention]struct{}),
+		client:   LogOnlyClient{},
+		gen:      gen,
+		getState: getState,
+		subs:     make(map[chan models.Intervention]struct{}),
 	}
 }
 
@@ -59,17 +80,10 @@ func (s *Service) Apply(iv models.Intervention) models.Intervention {
 	_ = s.client.SetMessage(iv.ZoneID, iv.Message, string(iv.Severity))
 	s.mu.Lock()
 	s.log = append(s.log, iv)
-	subs := make([]chan models.Intervention, 0, len(s.subs))
-	for c := range s.subs {
-		subs = append(subs, c)
-	}
 	s.mu.Unlock()
-	for _, c := range subs {
-		select {
-		case c <- iv:
-		default: // slow consumer; drop. never block the execution path.
-		}
-	}
+	s.fanout(iv)
+
+	go s.polish(iv)
 	return iv
 }
 
@@ -94,4 +108,51 @@ func (s *Service) Subscribe() (<-chan models.Intervention, func()) {
 		delete(s.subs, ch)
 		s.mu.Unlock()
 	}
+}
+
+func (s *Service) fanout(iv models.Intervention) {
+	s.mu.Lock()
+	subs := make([]chan models.Intervention, 0, len(s.subs))
+	for c := range s.subs {
+		subs = append(subs, c)
+	}
+	s.mu.Unlock()
+	for _, c := range subs {
+		select {
+		case c <- iv:
+		default: // slow consumer; drop
+		}
+	}
+}
+
+func (s *Service) polish(iv models.Intervention) {
+	if s.getState == nil {
+		return
+	}
+	metric, ok := s.getState(iv.ZoneID)
+	if !ok {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	newMessage, err := s.gen.Polish(ctx, iv, metric)
+	if err != nil || newMessage == "" {
+		return
+	}
+
+	iv.Message = newMessage
+
+	s.mu.Lock()
+	for i := range s.log {
+		if s.log[i].ID == iv.ID {
+			s.log[i].Message = newMessage
+			break
+		}
+	}
+	s.mu.Unlock()
+
+	_ = s.client.SetMessage(iv.ZoneID, newMessage, string(iv.Severity))
+	s.fanout(iv)
 }

@@ -26,7 +26,7 @@ func TestCriticalZoneNegotiatesOverflow(t *testing.T) {
 	defer cancel()
 	zoneIDs := []string{"A", "B"}
 	st := state.NewManager(zoneIDs)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := BuildNetwork(ctx, zoneIDs, st, sg)
 	b, _ := net.Node("B")
 	b.Inbox <- testMetric("B", 30, 100, models.CongestionLow)
@@ -53,7 +53,7 @@ func TestHighZoneDoesNotIntervene(t *testing.T) {
 	defer cancel()
 	zoneIDs := []string{"A"}
 	st := state.NewManager(zoneIDs)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := BuildNetwork(ctx, zoneIDs, st, sg)
 
 	a, _ := net.Node("A")
@@ -88,9 +88,9 @@ func TestOnNegotiationAcceptsWithSpareCapacity(t *testing.T) {
 
 func TestOnNegotiationRejectsWithoutSpare(t *testing.T) {
 	n := &Node{
-		ZoneID:     "B",
-		last:       testMetric("B", 90, 100, models.CongestionHigh),
-		intervene:  func(models.Intervention) {},
+		ZoneID:    "B",
+		last:      testMetric("B", 90, 100, models.CongestionHigh),
+		intervene: func(models.Intervention) {},
 	}
 	reply := make(chan NegotiationResponse, 1)
 	n.onNegotiation(NegotiationOffer{From: "A", To: "B", Overflow: 40, Reply: reply})
@@ -103,9 +103,9 @@ func TestOnNegotiationRejectsWithoutSpare(t *testing.T) {
 
 func TestOnNegotiationRejectsWhenCritical(t *testing.T) {
 	n := &Node{
-		ZoneID:     "B",
-		last:       testMetric("B", 110, 100, models.CongestionCritical),
-		intervene:  func(models.Intervention) {},
+		ZoneID:    "B",
+		last:      testMetric("B", 110, 100, models.CongestionCritical),
+		intervene: func(models.Intervention) {},
 	}
 	reply := make(chan NegotiationResponse, 1)
 	n.onNegotiation(NegotiationOffer{From: "A", To: "B", Overflow: 5, Reply: reply})
@@ -149,7 +149,7 @@ func TestRejectedRerouteDispatchesShuttle(t *testing.T) {
 	// has real spare capacity, so the shuttle must carry people there.
 	zoneIDs := []string{"A", "B", "C", "D"}
 	st := state.NewManager(zoneIDs)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := BuildNetwork(ctx, zoneIDs, st, sg)
 	b, _ := net.Node("B")
 	d, _ := net.Node("D")
@@ -184,7 +184,7 @@ func TestShedLoadFallsBackToHoldInflow(t *testing.T) {
 	defer cancel()
 	zoneIDs := []string{"A", "B", "C", "D"}
 	st := state.NewManager(zoneIDs)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := BuildNetwork(ctx, zoneIDs, st, sg)
 	for _, id := range []string{"B", "C", "D"} {
 		m := testMetric(id, 120, 100, models.CongestionCritical)

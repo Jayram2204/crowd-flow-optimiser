@@ -22,7 +22,7 @@ func newTestRouter(t *testing.T) http.Handler {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	st := state.NewManager([]string{"GATE_A", "GATE_B"})
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, []string{"GATE_A", "GATE_B"}, st, sg)
 	return NewRouter(NewHandlers(net, st, sg))
 }
@@ -193,7 +193,7 @@ func TestListInterventions_Sorting(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	st := state.NewManager([]string{"GATE_A"})
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, []string{"GATE_A"}, st, sg)
 	h := NewHandlers(net, st, sg)
 	router := NewRouter(h)
@@ -264,7 +264,7 @@ func TestSSEStream(t *testing.T) {
 
 	st := state.NewManager([]string{"GATE_A", "GATE_B"})
 	st.Set(models.ZoneMetric{ZoneID: "GATE_A", Capacity: 100, Occupancy: 50, Congestion: models.CongestionModerate})
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, []string{"GATE_A", "GATE_B"}, st, sg)
 	h := NewHandlers(net, st, sg)
 	router := NewRouter(h)
@@ -337,7 +337,7 @@ func TestSSEStream_NonFlusher(t *testing.T) {
 	defer cancel()
 
 	st := state.NewManager([]string{"GATE_A"})
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, []string{"GATE_A"}, st, sg)
 	h := NewHandlers(net, st, sg)
 

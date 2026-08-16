@@ -20,8 +20,8 @@ import (
 func main() {
 	cfg := config.Load()
 
-	signage := intervention.NewService()
 	st := state.NewManager(cfg.ZoneIDs)
+	signage := intervention.NewService(st.Get, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

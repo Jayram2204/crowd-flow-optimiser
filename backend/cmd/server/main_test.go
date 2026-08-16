@@ -24,7 +24,7 @@ func TestServerAssemblyAndLifecycle(t *testing.T) {
 		ZoneIDs:  []string{"TEST_ZONE_A", "TEST_ZONE_B"},
 	}
 
-	signage := intervention.NewService()
+	signage := intervention.NewService(nil, nil)
 	st := state.NewManager(cfg.ZoneIDs)
 
 	ctx, cancel := context.WithCancel(context.Background())

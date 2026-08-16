@@ -29,7 +29,7 @@ func setupWSTestServer(t *testing.T) (*httptest.Server, *state.Manager, *interve
 	t.Cleanup(cancel)
 
 	st := state.NewManager([]string{"GATE_A", "GATE_B"})
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, []string{"GATE_A", "GATE_B"}, st, sg)
 	h := NewHandlers(net, st, sg)
 	router := NewRouter(h)

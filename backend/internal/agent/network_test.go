@@ -14,7 +14,7 @@ func TestBuildNetworkRegistersRingAdjacency(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	st := state.NewManager([]string{"A", "B", "C"})
-	net := BuildNetwork(ctx, []string{"A", "B", "C"}, st, intervention.NewService())
+	net := BuildNetwork(ctx, []string{"A", "B", "C"}, st, intervention.NewService(nil, nil))
 
 	a, ok := net.Node("A")
 	if !ok {
@@ -68,7 +68,7 @@ func TestDeliverDropsWhenSaturated(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	st := state.NewManager([]string{"A"})
-	net := BuildNetwork(ctx, []string{"A"}, st, intervention.NewService())
+	net := BuildNetwork(ctx, []string{"A"}, st, intervention.NewService(nil, nil))
 
 	a, _ := net.Node("A")
 	// Fill the inbox buffer completely; there is no consumer draining it.

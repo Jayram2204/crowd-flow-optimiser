@@ -26,7 +26,7 @@ func TestStress_WS_ConcurrentHighVolumeBroadcast(t *testing.T) {
 
 	zones := []string{"GATE_A", "GATE_B", "GATE_C", "GATE_D", "BAG_CHECK"}
 	st := state.NewManager(zones)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, zones, st, sg)
 	h := NewHandlers(net, st, sg)
 	server := httptest.NewServer(NewRouter(h))
@@ -104,7 +104,7 @@ func TestStress_WS_RapidChurnAndDisconnect(t *testing.T) {
 
 	zones := []string{"GATE_A", "GATE_B"}
 	st := state.NewManager(zones)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, zones, st, sg)
 	h := NewHandlers(net, st, sg)
 	server := httptest.NewServer(NewRouter(h))
@@ -172,7 +172,7 @@ func TestStress_WS_SlowConsumerNonBlocking(t *testing.T) {
 
 	zones := []string{"GATE_A"}
 	st := state.NewManager(zones)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 	net := agent.BuildNetwork(ctx, zones, st, sg)
 	h := NewHandlers(net, st, sg)
 	server := httptest.NewServer(NewRouter(h))
@@ -207,7 +207,7 @@ func TestStress_WS_SlowConsumerNonBlocking(t *testing.T) {
 func TestStress_StateManager_Signage_Concurrency(t *testing.T) {
 	zones := []string{"GATE_A", "GATE_B", "GATE_C", "PLATFORM_1", "PLATFORM_2"}
 	st := state.NewManager(zones)
-	sg := intervention.NewService()
+	sg := intervention.NewService(nil, nil)
 
 	stop := make(chan struct{})
 	var wg sync.WaitGroup

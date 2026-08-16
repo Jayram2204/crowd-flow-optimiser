@@ -58,7 +58,7 @@ type Intervention struct {
 
 // AdHocIntervention is the payload for manually triggering an intervention.
 type AdHocIntervention struct {
-	ZoneID string           `json:"zone_id"`
-	Type   InterventionType `json:"type"`
-	Message string          `json:"message,omitempty"`
+	ZoneID  string           `json:"zone_id"`
+	Type    InterventionType `json:"type"`
+	Message string           `json:"message,omitempty"`
 }

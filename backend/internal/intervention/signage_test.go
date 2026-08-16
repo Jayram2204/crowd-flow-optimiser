@@ -8,7 +8,7 @@ import (
 )
 
 func TestApplyEnrichesAndRecords(t *testing.T) {
-	s := NewService()
+	s := NewService(nil, nil)
 	iv := s.Apply(models.Intervention{
 		ZoneID: "GATE_A",
 		Type:   models.InterventionSignageReroute,
@@ -28,7 +28,7 @@ func TestApplyEnrichesAndRecords(t *testing.T) {
 }
 
 func TestListReturnsCopy(t *testing.T) {
-	s := NewService()
+	s := NewService(nil, nil)
 	s.Apply(models.Intervention{ZoneID: "A", Type: models.InterventionHoldInflow})
 	got := s.List()
 	got[0].ZoneID = "MUTATED"
@@ -38,7 +38,7 @@ func TestListReturnsCopy(t *testing.T) {
 }
 
 func TestApplyFansOutToSubscribers(t *testing.T) {
-	s := NewService()
+	s := NewService(nil, nil)
 	sub, unsub := s.Subscribe()
 	defer unsub()
 

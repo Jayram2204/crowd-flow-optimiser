@@ -64,9 +64,15 @@ export default function Operate() {
         setZones((prev) => ({ ...prev, [m.zone_id]: m }));
       },
       onIntervention: (iv) =>
-        setInterventions((prev) =>
-          prev.some((p) => p.id === iv.id) ? prev : [iv, ...prev],
-        ),
+        setInterventions((prev) => {
+          const idx = prev.findIndex((p) => p.id === iv.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = iv;
+            return next;
+          }
+          return [iv, ...prev];
+        }),
       onOpen: () => {
         if (cancelled) return;
         // Refetch the authoritative list on every (re)connect so the log
