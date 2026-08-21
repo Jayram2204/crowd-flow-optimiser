@@ -4,23 +4,23 @@ uvicorn[standard]==0.30.1
 httpx==0.27.0
 
 # --- Multipart uploads (POST /api/v1/analyze-density) ---
-python-multipart==0.0.9
+python-multipart==0.0.31
 
 # --- Validation ---
 pydantic==2.7.4
 
 # --- Hugging Face vision model integration (simulated mode does not require it) ---
 huggingface-hub==0.23.4
-transformers==4.44.2
-torch==2.5.1
+transformers==5.5.0
+torch==2.13.0
 timm==1.0.9
-pillow==10.4.0
+pillow==12.3.0
 
 # --- Ultralytics YOLO (preferred live detector; transformers pipeline is the fallback) ---
 ultralytics==8.4.118
 
 # --- Testing ---
-pytest==8.4.2
+pytest==9.0.3
 pytest-cov>=6.0.0
 pytest-asyncio>=0.23.0
 
